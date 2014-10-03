@@ -1,10 +1,7 @@
-#ifndef MAINWINDOW_H
-#define MAINWINDOW_H
+#pragma once
 
 #include <QMainWindow>
 #include <QTimer>
-#include <QAudioRecorder>
-#include <QAudioInput>
 #include <QFile>
 
 #include "Song.h"
@@ -24,8 +21,6 @@ public:
 private:
     Ui::MainWindow *ui;
     QTimer* timer;
-    QAudioRecorder* recorder;
-    QAudioInput* input;
     bool recording = false;
     bool automatic = false;
     QFile* output;
@@ -39,5 +34,3 @@ private slots:
     void on_checkBox_toggled(bool checked);
     void on_checkBox_2_toggled(bool checked);
 };
-
-#endif // MAINWINDOW_H

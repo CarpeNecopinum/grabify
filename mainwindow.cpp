@@ -7,7 +7,6 @@
 #include <QWebElement>
 #include <QWebFrame>
 #include <QVariant>
-#include <QAudioRecorder>
 #include <QStandardPaths>
 #include <QProcess>
 #include <QNetworkProxy>
@@ -35,6 +34,9 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->setupUi(this);
     ui->webView->settings()->enablePersistentStorage(QDir::homePath());
     ui->webView->setUrl(QUrl("http://play.spotify.com"));
+
+    //Search Music folder
+    ui->lineEdit->setText(QStandardPaths::writableLocation(QStandardPaths::MusicLocation) + "/Grabify/%artist%-%song%.mp3");
 
     //Setup Timer looking for songs to grab
     timer = new QTimer();
