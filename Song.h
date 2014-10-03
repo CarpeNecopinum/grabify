@@ -51,6 +51,8 @@ public:
         tags.Update();
     }
 
+    const QString& getTitle() { return mTitle; }
+
 protected:
     QString mTitle, mArtist, mFilename;
     QProcess mRecording;

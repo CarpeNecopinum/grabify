@@ -19,6 +19,9 @@ public:
     ~MainWindow();
 
 private:
+    void stopRecording();
+    void startRecording(const QString& songTitle, const QString &songArtist);
+
     Ui::MainWindow *ui;
     QTimer* timer;
     bool recording = false;

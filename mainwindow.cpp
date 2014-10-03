@@ -14,7 +14,8 @@
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
-    ui(new Ui::MainWindow)
+    ui(new Ui::MainWindow),
+    currentSong(nullptr)
 {
     //Make sure spotify will run properly
     //QWebSettings::globalSettings()->setAttribute(QWebSettings::DeveloperExtrasEnabled, true);
@@ -50,6 +51,32 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
+void MainWindow::stopRecording()
+{
+    recording = false;
+
+    ui->statusBar->showMessage(QString("Stopping"));
+
+    if (currentSong)
+    {
+        currentSong->stop();
+        delete currentSong;
+        currentSong = nullptr;
+    }
+
+    ui->statusBar->showMessage(QString("Done"));
+}
+
+void MainWindow::startRecording(const QString &songTitle, const QString& songArtist)
+{
+    recording = true;
+
+    currentSong = new Song();
+    currentSong->record(songTitle, songArtist, ui->lineEdit->text());
+
+    ui->statusBar->showMessage(QString("Recording..."));
+}
+
 void MainWindow::checkSong()
 {
     timer->stop();
@@ -57,51 +84,25 @@ void MainWindow::checkSong()
     QWebFrame *frame = ui->webView->page()->mainFrame();
     QVariant songTitle = frame->documentElement().evaluateJavaScript("window.frames['app-player'].document.getElementById('track-name').innerText");
 
+    //Panic! We missed the ending of a song
+    if (currentSong && (songTitle.toString() != currentSong->getTitle()))
+        stopRecording();
+
+
     //Check, if a song is currently playing
     if (songTitle.toString() != "") {
 
-        QVariant songArtist = frame->documentElement().evaluateJavaScript("window.frames['app-player'].document.getElementById('track-artist').innerText");
-
-        QVariant progress = frame->documentElement().evaluateJavaScript("window.frames['app-player'].document.getElementById('track-current').innerText");
         QVariant length = frame->documentElement().evaluateJavaScript("window.frames['app-player'].document.getElementById('track-length').innerText");
+        QVariant progress = frame->documentElement().evaluateJavaScript("window.frames['app-player'].document.getElementById('track-current').innerText");
 
         //Song just started => begin recording
         if (progress.toString() == "0:00" && !recording)
         {
-            recording = true;
-            std::cout << "Start recording" << std::endl;
-
-            /*
-            QAudioEncoderSettings audioSettings;
-            audioSettings.setCodec("audio/FLAC");
-            audioSettings.setQuality(QMultimedia::HighQuality);
-
-
-            recorder = new QAudioRecorder();
-            recorder->setAudioSettings(audioSettings);
-            recorder->setOutputLocation(QUrl(tempFile));
-            recorder->record();
-            */
-
-            currentSong = new Song();
-            currentSong->record(songTitle.toString(), songArtist.toString(), ui->lineEdit->text());
-
-            ui->statusBar->showMessage(QString("Recording..."));
-
+            QVariant songArtist = frame->documentElement().evaluateJavaScript("window.frames['app-player'].document.getElementById('track-artist').innerText");
+            startRecording(songTitle.toString(), songArtist.toString());
         //Song is ending => finish recording
         } else if (progress.toString() == length.toString() && recording) {
-            recording = false;
-
-            ui->statusBar->showMessage(QString("Stopping"));
-            std::cout << "Stop recording and save "
-                      << songTitle.toString().toStdString() << " by "
-                      << songArtist.toString().toStdString() << std::endl;
-            //recorder->stop();
-
-            currentSong->stop();
-            delete currentSong;
-
-            ui->statusBar->showMessage(QString("Done"));
+            stopRecording();
         }
     }
 
