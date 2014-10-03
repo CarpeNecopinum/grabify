@@ -2,7 +2,7 @@ grabify
 =======
 
 Prototype caveats:
-- expects proxy on localhost:8118 (privox to filter ads)
+- expects proxy on localhost:8118 (privoxy to filter ads)
 - expects avconv, pulseaudio
 - use pavucontrol etc. to route sound output back to grabify ("force record" helps you there)
 - no cookies :(  (means you have to log into spotify every time you start grabify)
