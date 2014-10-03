@@ -18,7 +18,7 @@ MainWindow::MainWindow(QWidget *parent) :
     currentSong(nullptr)
 {
     //Make sure spotify will run properly
-    //QWebSettings::globalSettings()->setAttribute(QWebSettings::DeveloperExtrasEnabled, true);
+    QWebSettings::globalSettings()->setAttribute(QWebSettings::DeveloperExtrasEnabled, true);
     QWebSettings::globalSettings()->setAttribute(QWebSettings::LocalStorageEnabled, true);
     QWebSettings::globalSettings()->setAttribute(QWebSettings::LocalStorageDatabaseEnabled, true);
     QWebSettings::globalSettings()->setAttribute(QWebSettings::PluginsEnabled, true);
@@ -37,7 +37,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->webView->setUrl(QUrl("http://play.spotify.com"));
 
     //Search Music folder
-    ui->lineEdit->setText(QStandardPaths::writableLocation(QStandardPaths::MusicLocation) + "/Grabify/%artist%-%song%.mp3");
+    ui->lineEdit->setText(QStandardPaths::writableLocation(QStandardPaths::MusicLocation) + "/Grabify/%artist%/%album%/%song%.mp3");
 
     //Setup Timer looking for songs to grab
     timer = new QTimer();
@@ -67,12 +67,15 @@ void MainWindow::stopRecording()
     ui->statusBar->showMessage(QString("Done"));
 }
 
-void MainWindow::startRecording(const QString &songTitle, const QString& songArtist)
+void MainWindow::startRecording(const QString &songTitle, const QString& songArtist, const QString& songAlbum)
 {
     recording = true;
 
     currentSong = new Song();
-    currentSong->record(songTitle, songArtist, ui->lineEdit->text());
+    currentSong->setTitle(songTitle);
+    currentSong->setArtist(songArtist);
+    currentSong->setAlbum(songAlbum);
+    currentSong->record(ui->lineEdit->text());
 
     ui->statusBar->showMessage(QString("Recording..."));
 }
@@ -99,7 +102,8 @@ void MainWindow::checkSong()
         if (progress.toString() == "0:00" && !recording)
         {
             QVariant songArtist = frame->documentElement().evaluateJavaScript("window.frames['app-player'].document.getElementById('track-artist').innerText");
-            startRecording(songTitle.toString(), songArtist.toString());
+            QVariant songAlbum = frame->documentElement().evaluateJavaScript("window.frames['app-player'].document.querySelector('#cover-art a').getAttribute('data-tooltip')");
+            startRecording(songTitle.toString(), songArtist.toString(), songAlbum.toString());
         //Song is ending => finish recording
         } else if (progress.toString() == length.toString() && recording) {
             stopRecording();

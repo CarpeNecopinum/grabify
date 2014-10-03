@@ -10,13 +10,17 @@ class Song
 {
 
 public:
-    void record(QString title, QString artist, QString pattern)
+
+    void setArtist(const QString& artist) { mArtist = artist; }
+    void setAlbum(const QString& album) { mAlbum = album; }
+    void setTitle(const QString& title) { mTitle = title; }
+
+    void record(QString pattern)
     {
         mTesting = false;
-
-        mTitle = title;
-        mArtist = artist;
-        mFilename = pattern.replace(QString("%artist%"), artist).replace(QString("%song%"), title);
+        mFilename = pattern.replace(QString("%artist%"), mArtist)
+                           .replace(QString("%song%"), mTitle)
+                           .replace(QString("%album%"), mAlbum);
 
         QFileInfo(mFilename).absoluteDir().mkpath(".");
         mRecording.start("avconv", QStringList{"-f", "pulse", "-i", "default", "-ab", "192k", mFilename});
@@ -51,6 +55,14 @@ public:
         titleFrame.Field(ID3FN_TEXT).Set(mTitle.toStdString().c_str());
         tags.AddFrame(titleFrame);
 
+        // Add Album, if known
+        if (mAlbum != QString(""))
+        {
+            ID3_Frame albumFrame(ID3FID_ALBUM);
+            albumFrame.Field(ID3FN_TEXT).Set(mAlbum.toStdString().c_str());
+            tags.AddFrame(albumFrame);
+        }
+
         // Write the new tags to the file
         tags.Update();
     }
@@ -58,7 +70,7 @@ public:
     const QString& getTitle() { return mTitle; }
 
 protected:
-    QString mTitle, mArtist, mFilename;
+    QString mTitle, mArtist, mFilename, mAlbum;
     QProcess mRecording;
     bool mTesting;
 };

@@ -20,7 +20,7 @@ public:
 
 private:
     void stopRecording();
-    void startRecording(const QString& songTitle, const QString &songArtist);
+    void startRecording(const QString& songTitle, const QString &songArtist, const QString &songAlbum);
 
     Ui::MainWindow *ui;
     QTimer* timer;
