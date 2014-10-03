@@ -3,6 +3,8 @@
 #include <QString>
 #include <QProcess>
 #include <id3/tag.h>
+#include <QDir>
+#include <QFileInfo>
 
 class Song
 {
@@ -15,6 +17,8 @@ public:
         mTitle = title;
         mArtist = artist;
         mFilename = pattern.replace(QString("%artist%"), artist).replace(QString("%song%"), title);
+
+        QFileInfo(mFilename).absoluteDir().mkpath(".");
         mRecording.start("avconv", QStringList{"-f", "pulse", "-i", "default", "-ab", "192k", mFilename});
     }
 
