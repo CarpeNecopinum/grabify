@@ -5,6 +5,8 @@
 #include <id3/tag.h>
 #include <QDir>
 #include <QFileInfo>
+#include <QPixmap>
+#include <QStandardPaths>
 
 class Song
 {
@@ -17,19 +19,30 @@ public:
 
     void record(QString pattern)
     {
-        mTesting = false;
-        mFilename = pattern.replace(QString("%artist%"), mArtist)
-                           .replace(QString("%song%"), mTitle)
-                           .replace(QString("%album%"), mAlbum);
+        mPattern = pattern;
 
-        QFileInfo(mFilename).absoluteDir().mkpath(".");
-        mRecording.start("avconv", QStringList{"-f", "pulse", "-i", "default", "-ab", "192k", mFilename});
+        mTesting = false;
+
+        mTempFile = QStandardPaths::writableLocation(QStandardPaths::TempLocation).append(QDir::separator()).append("grabifytemp_").append(QString::number(qrand())).append(".mp3");
+        mRecording.start("avconv", QStringList{"-f", "pulse", "-i", "default", "-ab", "192k", mTempFile});
+    }
+
+    /// Checks, if the cover for the current Song still needs to be downloaded
+    bool needsCover()
+    {
+        updateOutputfile();
+        return (!(QFile(mFolder.absoluteFilePath("cover.jpg")).exists()));
+    }
+
+    void saveCover(const QImage& cover)
+    {
+        mFolder.mkpath(".");
+        cover.save(mFolder.absoluteFilePath("cover.jpg"), "JPG");
     }
 
     void recordTest()
     {
         mTesting = true;
-
         mRecording.start("avconv", QStringList{"-f", "pulse", "-i", "default", "-f", "flac", "-"});
     }
 
@@ -38,12 +51,26 @@ public:
         mRecording.terminate();
         mRecording.waitForFinished(1000);
 
-
         // Don't try to tag stdout...
         if (mTesting) return;
 
+        updateOutputfile();
+        writeTags();
+
+        // Create necessary folders
+        mFolder.mkpath(".");
+
+        //Move file to destination
+        QFile(mTempFile).rename(mFilename);
+    }
+
+    const QString& getTitle() { return mTitle; }
+
+protected:
+    void writeTags()
+    {
         // Edit tags for recorded file
-        ID3_Tag tags(mFilename.toStdString().c_str());
+        ID3_Tag tags(mTempFile.toStdString().c_str());
 
         // Add Artist
         ID3_Frame artistFrame(ID3FID_LEADARTIST);
@@ -67,10 +94,19 @@ public:
         tags.Update();
     }
 
-    const QString& getTitle() { return mTitle; }
+    void updateOutputfile()
+    {
 
-protected:
-    QString mTitle, mArtist, mFilename, mAlbum;
+        // Evaluate the Pattern for the filename
+        mFilename = mPattern.replace(QString("%artist%"), mArtist)
+                           .replace(QString("%song%"), mTitle)
+                           .replace(QString("%album%"), mAlbum);
+
+        mFolder = QFileInfo(mFilename).absoluteDir();
+    }
+
+    QString mTitle, mArtist, mFilename, mAlbum, mTempFile, mPattern;
     QProcess mRecording;
+    QDir mFolder;
     bool mTesting;
 };

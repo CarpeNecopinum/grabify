@@ -10,3 +10,6 @@ Prototype caveats:
 - no hardware acceleration for rendering, due to a bug in QtWebkit that would make most of the interface disappear (=> high CPU load)
 - ~~does not automatically create folders yet~~ it does now!
 
+#Getting albums right
+
+To get the name of the album of the current song, the "Play Queue" has to be open at the beginning of each song.

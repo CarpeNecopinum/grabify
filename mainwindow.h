@@ -6,6 +6,8 @@
 
 #include "Song.h"
 
+class QWebFrame;
+
 namespace Ui {
 class MainWindow;
 }
@@ -20,10 +22,11 @@ public:
 
 private:
     void stopRecording();
-    void startRecording(const QString& songTitle, const QString &songArtist, const QString &songAlbum);
+    void startRecording(const QString& songTitle, const QString &songArtist);
+    QWebFrame* findPlayerFrame(QWebFrame* root);
 
     Ui::MainWindow *ui;
-    QTimer* timer;
+    QTimer *checkInterval, *albumDelay;
     bool recording = false;
     bool automatic = false;
     QFile* output;
@@ -33,6 +36,8 @@ private:
 
 public slots:
     void checkSong();
+    void readAlbum();
+
 private slots:
     void on_checkBox_toggled(bool checked);
     void on_checkBox_2_toggled(bool checked);

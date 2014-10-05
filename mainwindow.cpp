@@ -40,10 +40,17 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->lineEdit->setText(QStandardPaths::writableLocation(QStandardPaths::MusicLocation) + "/Grabify/%artist%/%album%/%song%.mp3");
 
     //Setup Timer looking for songs to grab
-    timer = new QTimer();
-    timer->setInterval(100);
-    connect(timer, SIGNAL(timeout()), this, SLOT(checkSong()));
+    checkInterval = new QTimer();
+    checkInterval->setInterval(100);
+    connect(checkInterval, SIGNAL(timeout()), this, SLOT(checkSong()));
 
+    //Setup Timer to fetch Album and Cover (both aren't updated immediately, so we need some delay)
+    albumDelay = new QTimer();
+    albumDelay->setInterval(2500);
+    albumDelay->setSingleShot(true);
+    connect(albumDelay, SIGNAL(timeout()), this, SLOT(readAlbum()));
+
+    setWindowTitle("Grabify");
 }
 
 MainWindow::~MainWindow()
@@ -65,60 +72,104 @@ void MainWindow::stopRecording()
     }
 
     ui->statusBar->showMessage(QString("Done"));
+    setWindowTitle("Grabify");
 }
 
-void MainWindow::startRecording(const QString &songTitle, const QString& songArtist, const QString& songAlbum)
+void MainWindow::startRecording(const QString &songTitle, const QString& songArtist)
 {
     recording = true;
 
     currentSong = new Song();
     currentSong->setTitle(songTitle);
     currentSong->setArtist(songArtist);
-    currentSong->setAlbum(songAlbum);
     currentSong->record(ui->lineEdit->text());
 
     ui->statusBar->showMessage(QString("Recording..."));
+    setWindowTitle(QString("Grabify - Recording ") + songTitle + " by " + songArtist);
 }
+
+QWebFrame *MainWindow::findPlayerFrame(QWebFrame *root)
+{
+    for (QWebFrame *temp : root->childFrames())
+        if (temp->frameName() == "app-player")
+            return temp;
+    return nullptr;
+}
+
+void MainWindow::readAlbum()
+{
+    if (!currentSong) return;
+
+    QWebFrame *frame = ui->webView->page()->mainFrame();
+    QWebFrame *playerFrame = findPlayerFrame(frame);
+    QString albumName = frame->documentElement().evaluateJavaScript("window.frames[document.querySelector('#section-queue iframe').id].document.querySelector('.current .list-row-albums').innerText").toString();
+
+    if (albumName != "")
+    {
+        currentSong->setAlbum(albumName);
+        if (currentSong->needsCover())
+        {
+            QWebElement el = playerFrame->documentElement().findFirst(".sp-image-img");
+            QImage image(el.geometry().width(), el.geometry().height(), QImage::Format_RGB32);
+            QPainter painter(&image);
+            el.render(&painter);
+            painter.end();
+
+            currentSong->saveCover(image);
+        }
+    }
+}
+
 
 void MainWindow::checkSong()
 {
-    timer->stop();
+    checkInterval->stop();
 
-    QWebFrame *frame = ui->webView->page()->mainFrame();
-    QVariant songTitle = frame->documentElement().evaluateJavaScript("window.frames['app-player'].document.getElementById('track-name').innerText");
+    QWebFrame *playerFrame = findPlayerFrame(ui->webView->page()->mainFrame());
 
-    //Panic! We missed the ending of a song
-    if (currentSong && (songTitle.toString() != currentSong->getTitle()))
-        stopRecording();
+    // Only look for songs if the player is active
+    if (playerFrame)
+    {
+        QVariant songTitle = playerFrame->documentElement().evaluateJavaScript("document.getElementById('track-name').innerText");
 
-
-    //Check, if a song is currently playing
-    if (songTitle.toString() != "") {
-
-        QVariant length = frame->documentElement().evaluateJavaScript("window.frames['app-player'].document.getElementById('track-length').innerText");
-        QVariant progress = frame->documentElement().evaluateJavaScript("window.frames['app-player'].document.getElementById('track-current').innerText");
-
-        //Song just started => begin recording
-        if (progress.toString() == "0:00" && !recording)
+        //Panic! We missed the ending of a song
+        if (currentSong && (songTitle.toString() != currentSong->getTitle()))
         {
-            QVariant songArtist = frame->documentElement().evaluateJavaScript("window.frames['app-player'].document.getElementById('track-artist').innerText");
-            QVariant songAlbum = frame->documentElement().evaluateJavaScript("window.frames['app-player'].document.querySelector('#cover-art a').getAttribute('data-tooltip')");
-            startRecording(songTitle.toString(), songArtist.toString(), songAlbum.toString());
-        //Song is ending => finish recording
-        } else if (progress.toString() == length.toString() && recording) {
             stopRecording();
+            if (!automatic) return;
+        }
+
+
+        //Check, if a song is currently playing
+        if (songTitle.toString() != "") {
+
+            QVariant length = playerFrame->documentElement().evaluateJavaScript("document.getElementById('track-length').innerText");
+            QVariant progress = playerFrame->documentElement().evaluateJavaScript("document.getElementById('track-current').innerText");
+
+            //Song just started => begin recording
+            if (progress.toString() == "0:00" && !recording)
+            {
+                QVariant songArtist = playerFrame->documentElement().evaluateJavaScript("document.getElementById('track-artist').innerText");
+                QVariant songAlbum = playerFrame->documentElement().evaluateJavaScript("document.querySelector('#cover-art a').getAttribute('data-tooltip').replace(/ by .*?$/, '')");
+                startRecording(songTitle.toString(), songArtist.toString());
+                albumDelay->start();
+
+            //Song is ending => finish recording
+            } else if (progress.toString() == length.toString() && recording) {
+                stopRecording();
+            }
         }
     }
 
     //Keep timer running, if still recording or looking for songs
-    if (recording || automatic) timer->start();
+    if (recording || automatic) checkInterval->start();
 }
 
 void MainWindow::on_checkBox_toggled(bool checked) //"automatic record"
 {
 
     automatic = checked;
-    if (checked) timer->start(); else if (!recording) timer->stop();
+    if (checked) checkInterval->start(); else if (!recording) checkInterval->stop();
 }
 
 void MainWindow::on_checkBox_2_toggled(bool checked) //"force record"
