@@ -15,9 +15,12 @@ CONFIG += c++11
 SOURCES += main.cpp\
         mainwindow.cpp
 
-LIBS += /usr/lib/libid3.a -lz
+LIBS += libid3.a -lz
 
 HEADERS  += mainwindow.h \
-    Song.h
+    Song.h \
+    util/Singleton.h \
+    util/Configuration.hh \
+
 
 FORMS    += mainwindow.ui

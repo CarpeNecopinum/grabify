@@ -11,6 +11,7 @@
 #include <QProcess>
 #include <QNetworkProxy>
 
+#include "util/Configuration.hh"
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -37,7 +38,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->webView->setUrl(QUrl("http://play.spotify.com"));
 
     //Search Music folder
-    ui->lineEdit->setText(QStandardPaths::writableLocation(QStandardPaths::MusicLocation) + "/Grabify/%artist%/%album%/%song%.mp3");
+    ui->lineEdit->setText(Configuration::the().getOutputPattern());
 
     //Setup Timer looking for songs to grab
     checkInterval = new QTimer();

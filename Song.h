@@ -8,6 +8,8 @@
 #include <QPixmap>
 #include <QStandardPaths>
 
+#include "util/Configuration.hh"
+
 class Song
 {
 
@@ -23,7 +25,7 @@ public:
 
         mTesting = false;
 
-        mTempFile = QStandardPaths::writableLocation(QStandardPaths::TempLocation).append(QDir::separator()).append("grabifytemp_").append(QString::number(qrand())).append(".mp3");
+        mTempFile = Configuration::the().makeTempName();
         mRecording.start("avconv", QStringList{"-f", "pulse", "-i", "default", "-ab", "192k", mTempFile});
     }
 
