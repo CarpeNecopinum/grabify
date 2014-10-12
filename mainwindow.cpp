@@ -37,9 +37,6 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->webView->settings()->enablePersistentStorage(QDir::homePath());
     ui->webView->setUrl(QUrl("http://play.spotify.com"));
 
-    //Search Music folder
-    ui->lineEdit->setText(Configuration::the().getOutputPattern());
-
     //Setup Timer looking for songs to grab
     checkInterval = new QTimer();
     checkInterval->setInterval(100);
@@ -63,8 +60,6 @@ void MainWindow::stopRecording()
 {
     recording = false;
 
-    ui->statusBar->showMessage(QString("Stopping"));
-
     if (currentSong)
     {
         currentSong->stop();
@@ -72,7 +67,6 @@ void MainWindow::stopRecording()
         currentSong = nullptr;
     }
 
-    ui->statusBar->showMessage(QString("Done"));
     setWindowTitle("Grabify");
 }
 
@@ -83,9 +77,8 @@ void MainWindow::startRecording(const QString &songTitle, const QString& songArt
     currentSong = new Song();
     currentSong->setTitle(songTitle);
     currentSong->setArtist(songArtist);
-    currentSong->record(ui->lineEdit->text());
+    currentSong->record(Configuration::the().get(Configuration::OUTPUT_PATTERN));
 
-    ui->statusBar->showMessage(QString("Recording..."));
     setWindowTitle(QString("Grabify - Recording ") + songTitle + " by " + songArtist);
 }
 
@@ -166,23 +159,14 @@ void MainWindow::checkSong()
     if (recording || automatic) checkInterval->start();
 }
 
-void MainWindow::on_checkBox_toggled(bool checked) //"automatic record"
+void MainWindow::on_actionRecord_automatically_triggered(bool checked)
 {
-
     automatic = checked;
     if (checked) checkInterval->start(); else if (!recording) checkInterval->stop();
 }
 
-void MainWindow::on_checkBox_2_toggled(bool checked) //"force record"
+void MainWindow::on_actionConfiguration_triggered()
 {
-    static Song* testSong;
-
-    if (checked)
-    {
-        testSong = new Song();
-        testSong->recordTest();
-    } else {
-        testSong->stop();
-        delete testSong;
-    }
+    config.prepare();
+    config.show();
 }

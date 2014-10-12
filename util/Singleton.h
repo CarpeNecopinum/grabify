@@ -4,8 +4,8 @@ template <class T>
 class Singleton
 {
 public:
-    T& the() {
-        static T;
-        return T;
+    static T& the() {
+        static T instance;
+        return instance;
     }
 };

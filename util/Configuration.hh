@@ -6,29 +6,41 @@
 #include <QDir>
 #include <QStandardPaths>
 
+#include <map>
+
 class Configuration : public Singleton<Configuration>
 {
 public:
+    enum Options
+    {
+        OUTPUT_PATTERN,
+        TEMP_PATTERN,
+        RECORD_COMMAND,
+        AUDIO_SYSTEM,
+        AUDIO_SOURCE,
+
+        OPTIONS_COUNT
+    };
+
     Configuration()
     {
         const QString s = QDir::separator();
 
-        mOutputPattern = QStandardPaths::writableLocation(QStandardPaths::MusicLocation)
+        set(OUTPUT_PATTERN, QStandardPaths::writableLocation(QStandardPaths::MusicLocation)
                         + s + "Grabify"
                         + s + "%artist%"
                         + s + "%album%"
-                        + s + "%song%.mp3";
+                        + s + "%song%.mp3");
 
-        mTempPattern = QStandardPaths::writableLocation(QStandardPaths::TempLocation)
-                       + s + "grabifytemp_%num%.mp3";
+        set(TEMP_PATTERN, QStandardPaths::writableLocation(QStandardPaths::TempLocation)
+                       + s + "grabifytemp_%num%.mp3");
     }
 
-    const QString& getOutputPattern() { return mOutputPattern; }
-    const QString& getTempPattern()   { return mTempPattern;   }
+    const QString& get(Options option) { return mOptions[option]; }
+    void set(Options option, const QString& value) { mOptions[option] = value; }
 
-    const QString& makeTempName() { return mTempPattern.replace("%num%", QString::number(qrand())); }
+    QString makeTempName() { return QString(get(TEMP_PATTERN)).replace("%num%", QString::number(qrand())); }
 
 protected:
-    QString mOutputPattern;
-    QString mTempPattern;
-}
+    QString mOptions[OPTIONS_COUNT];
+};

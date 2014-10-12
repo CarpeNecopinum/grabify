@@ -4,6 +4,7 @@
 #include <QTimer>
 #include <QFile>
 
+#include "configwindow.h"
 #include "Song.h"
 
 class QWebFrame;
@@ -34,11 +35,13 @@ private:
 
     Song* currentSong;
 
+    ConfigWindow config;
+
 public slots:
     void checkSong();
     void readAlbum();
 
 private slots:
-    void on_checkBox_toggled(bool checked);
-    void on_checkBox_2_toggled(bool checked);
+    void on_actionRecord_automatically_triggered(bool checked);
+    void on_actionConfiguration_triggered();
 };

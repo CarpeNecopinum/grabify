@@ -13,14 +13,23 @@ TEMPLATE = app
 
 CONFIG += c++11
 SOURCES += main.cpp\
-        mainwindow.cpp
+        mainwindow.cpp \
+    configwindow.cpp
 
-LIBS += libid3.a -lz
+LIBS += -lid3 -lz
 
 HEADERS  += mainwindow.h \
     Song.h \
+    configwindow.h \
     util/Singleton.h \
     util/Configuration.hh \
 
+FORMS    += mainwindow.ui \
+    configwindow.ui
 
-FORMS    += mainwindow.ui
+RES_FILE += grabify.res
+
+OTHER_FILES +=
+
+RESOURCES += \
+    grabify.qrc
