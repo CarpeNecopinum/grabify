@@ -55,7 +55,9 @@ void ConfigWindow::on_cbSoundSystem_currentIndexChanged(const QString &text)
 
 void ConfigWindow::on_btApply_clicked()
 {
-    Configuration::the().set(Configuration::OUTPUT_PATTERN, ui->leOutputPattern->text());
+    Configuration::the().set(Configuration::OUTPUT_PATTERN, ui->leOutputPattern->text())
+            .set(Configuration::AUDIO_SYSTEM, ui->cbSoundSystem->currentText())
+            .set(Configuration::AUDIO_SOURCE, ui->cbSoundSource->currentText());
 
     this->close();
 }

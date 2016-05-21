@@ -7,6 +7,7 @@
 #include <QFileInfo>
 #include <QPixmap>
 #include <QStandardPaths>
+#include <QtDebug>
 
 #include "util/Configuration.hh"
 
@@ -26,7 +27,8 @@ public:
         mTesting = false;
 
         mTempFile = Configuration::the().makeTempName();
-        mRecording.start("avconv", QStringList{"-f", "pulse", "-i", "default", "-ab", "192k", mTempFile});
+        qDebug() << "Temp File: " << mTempFile;
+        mRecording.start("ffmpeg", QStringList{"-f", "pulse", "-i", "default", "-ab", "192k", mTempFile});
     }
 
     /// Checks, if the cover for the current Song still needs to be downloaded
@@ -45,7 +47,7 @@ public:
     void recordTest()
     {
         mTesting = true;
-        mRecording.start("avconv", QStringList{"-f", "pulse", "-i", "default", "-f", "flac", "-"});
+        mRecording.start("ffmpeg", QStringList{"-f", "pulse", "-i", "default", "-f", "flac", "-"});
     }
 
     void stop()
@@ -60,6 +62,9 @@ public:
         writeTags();
 
         // Create necessary folders
+        qDebug() << "Folder: " << mFolder;
+        qDebug() << "Filename: " << mFilename;
+
         mFolder.mkpath(".");
 
         //Move file to destination
@@ -103,6 +108,7 @@ protected:
         mFilename = mPattern.replace(QString("%artist%"), mArtist)
                            .replace(QString("%song%"), mTitle)
                            .replace(QString("%album%"), mAlbum);
+                           //.replace(QString("/"), QString("_"));
 
         mFolder = QFileInfo(mFilename).absoluteDir();
     }

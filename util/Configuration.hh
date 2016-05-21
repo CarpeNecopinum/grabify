@@ -37,7 +37,10 @@ public:
     }
 
     const QString& get(Options option) { return mOptions[option]; }
-    void set(Options option, const QString& value) { mOptions[option] = value; }
+    Configuration& set(Options option, const QString& value) {
+        mOptions[option] = value;
+        return *this; // allows chained sets
+    }
 
     QString makeTempName() { return QString(get(TEMP_PATTERN)).replace("%num%", QString::number(qrand())); }
 

@@ -35,7 +35,7 @@ MainWindow::MainWindow(QWidget *parent) :
     //Go to Spotify
     ui->setupUi(this);
     ui->webView->settings()->enablePersistentStorage(QDir::homePath());
-    ui->webView->setUrl(QUrl("http://play.spotify.com"));
+    ui->webView->setUrl(QUrl("https://play.spotify.com"));
 
     //Setup Timer looking for songs to grab
     checkInterval = new QTimer();
@@ -85,8 +85,11 @@ void MainWindow::startRecording(const QString &songTitle, const QString& songArt
 QWebFrame *MainWindow::findPlayerFrame(QWebFrame *root)
 {
     for (QWebFrame *temp : root->childFrames())
-        if (temp->frameName() == "app-player")
+    {
+        //qDebug() << temp->requestedUrl();
+        if (temp->requestedUrl().toString().startsWith("https://play.spotify.com/apps/player"))
             return temp;
+    }
     return nullptr;
 }
 
@@ -124,6 +127,7 @@ void MainWindow::checkSong()
     // Only look for songs if the player is active
     if (playerFrame)
     {
+        //qDebug() << "Player frame found.";
         QVariant songTitle = playerFrame->documentElement().evaluateJavaScript("document.getElementById('track-name').innerText");
 
         //Panic! We missed the ending of a song
@@ -153,6 +157,10 @@ void MainWindow::checkSong()
                 stopRecording();
             }
         }
+    }
+    else
+    {
+        //qDebug() << "No Player frame found.";
     }
 
     //Keep timer running, if still recording or looking for songs
